@@ -1,0 +1,12 @@
+[versions]
+eclipse-tycho-core = "3.9.1.v20130905-0837"
+eclipse-core-runtime = "3.9.100-v20131218-1515"
+eclipse-burt-resources = "3.8.101.v20130717-0806"
+picocli = "4.7.6"
+
+[libraries]
+eclipse-tycho-core = { group = "org.eclipse.tycho", name = "org.eclipse.jdt.core", version.ref = "eclipse-tycho-core" }
+eclipse-core-runtime = { group = "org.eclipse.core", name = "runtime", version.ref = "eclipse-core-runtime" }
+eclipse-burt-resources = { group = "org.eclipse.birt.runtime", name = "org.eclipse.core.resources", version.ref = "eclipse-burt-resources" }
+picocli-api = { group = "info.picocli", name = "picocli", version.ref = "picocli" }
+picocli-annotation-processor = { group = "info.picocli", name = "picocli-codegen", version.ref = "picocli" }
