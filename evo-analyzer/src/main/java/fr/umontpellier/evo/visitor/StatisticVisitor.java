@@ -2,6 +2,7 @@ package fr.umontpellier.evo.visitor;
 
 import fr.umontpellier.evo.ClassParser;
 import fr.umontpellier.evo.ClassVisitor;
+import lombok.Data;
 import org.eclipse.jdt.core.dom.ContinueStatement;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
@@ -48,31 +49,23 @@ public class StatisticVisitor extends ClassVisitor<StatisticVisitor.Result> {
         return result;
     }
 
+    @Data
     public static class Result implements ClassVisitor.Result {
         private Class clazz;
         private final List<Method> methods = new ArrayList<>();
         private final List<Field> fields = new ArrayList<>();
 
-        public record Class(int lineCount) {}
-        public record Method(String name, int lineCount) {}
-        public record Field() {}
-
-        public List<Field> fields() {
-            return fields;
+        @Data
+        public static class Class {
+            private final int lineCount;
         }
-
-        public List<Method> methods() {
-            return methods;
+        @Data
+        public static class Method {
+            private final String name;
+            private final int lineCount;
         }
+        public static class Field {}
 
-        public Class clazz() {
-            return clazz;
-        }
-
-        public Result clazz(Class clazz) {
-            this.clazz = clazz;
-            return this;
-        }
     }
 
 }

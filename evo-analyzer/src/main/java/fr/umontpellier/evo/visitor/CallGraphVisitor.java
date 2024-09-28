@@ -23,7 +23,7 @@ public class CallGraphVisitor extends ClassVisitor<CallGraphVisitor.Result> {
 
     @Override
     public boolean visit(MethodDeclaration node) {
-        this.method = caller.pkg() + "#" + node.getName().toString();
+        this.method = node.getName().toString();
         return super.visit(node);
     }
 

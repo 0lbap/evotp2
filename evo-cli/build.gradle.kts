@@ -33,3 +33,8 @@ tasks.test {
 application {
     mainClass = "fr.umontpellier.evo.Start"
 }
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}

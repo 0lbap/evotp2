@@ -1,6 +1,7 @@
 package fr.umontpellier.evo;
 
 import fr.umontpellier.evo.utils.Colors;
+import fr.umontpellier.evo.visitor.CallGraphVisitor;
 import fr.umontpellier.evo.visitor.FileTreeAgregationVisitor;
 import fr.umontpellier.evo.visitor.StatisticVisitor;
 import guru.nidi.graphviz.attribute.Color;
@@ -9,14 +10,15 @@ import guru.nidi.graphviz.attribute.Rank;
 import guru.nidi.graphviz.attribute.Style;
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
+import guru.nidi.graphviz.model.Factory;
 import guru.nidi.graphviz.model.Graph;
+import guru.nidi.graphviz.model.Node;
 import picocli.CommandLine;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static fr.umontpellier.evo.utils.Streams.unwrap;
 import static guru.nidi.graphviz.attribute.Attributes.attr;
@@ -64,17 +66,38 @@ public class EvoCommand {
     @CommandLine.Command(name = "callgraph")
     public Integer callGraph(
             @CommandLine.Parameters(arity = "1", paramLabel = "root") Path root
-    ) {
-        Graph g = graph("example1").directed()
+    ) throws IOException {
+        var visitor = new FileTreeAgregationVisitor(Optional.of(".java"));
+        // Atroce
+        walkFileTree(root, visitor);
+
+        Graph g = graph("callgraph<").directed()
+                .graphAttr().with(Color.TRANSPARENT.background())
+                .graphAttr().with(Color.WHITE.font())
                 .graphAttr().with(Rank.dir(LEFT_TO_RIGHT))
                 .nodeAttr().with(Font.name("arial"))
-                .linkAttr().with("class", "link-class")
-                .with(
-                        node("a").with(Color.RED).link(node("b")),
-                        node("b").link(
-                                to(node("c")).with(attr("weight", 5), Style.DASHED)
-                        )
-                );
+                .linkAttr().with("class", "link-class");
+        var map = visitor.paths().stream()
+                .map(f -> unwrap(() -> ClassParser.from(root, f)))
+                .filter(Objects::nonNull)
+                .flatMap(p -> p.accept(CallGraphVisitor::new).calls().entrySet().stream())
+                .collect(Collectors.toMap(
+                        e -> node(e.getKey()),
+                        e -> e.getValue().stream().map(Factory::node).toList(),
+                        (list1, list2) -> {
+                            List<Node> mergedList = new ArrayList<>(list1);
+                            mergedList.addAll(list2);
+                            return mergedList;
+                        }
+                ));
+        for (var entry: map.entrySet()) {
+            var node = entry.getKey().with(Color.WHITE.font()).with(Color.WHITE);
+            for (var edge: entry.getValue()) {
+                node = node.link(to(edge.with(Color.WHITE.font()).with(Color.WHITE)).with(Color.WHITE));
+            }
+            g = g.with(node);
+        }
+
         System.out.println(Graphviz.fromGraph(g).height(100).render(Format.DOT));
         return 0;
     }
