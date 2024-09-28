@@ -1,6 +1,8 @@
 package fr.umontpellier.evo;
 
 import fr.umontpellier.evo.visitor.PackageResolverVisitor;
+import lombok.Data;
+import lombok.Getter;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -14,6 +16,7 @@ import java.util.function.Function;
 
 import static java.nio.file.Files.readString;
 
+@Data
 public class ClassParser {
 
     private static final Map<String, ClassParser> cache = new HashMap<>();
@@ -29,9 +32,11 @@ public class ClassParser {
         return from(projectRoot, readString(file));
     }
 
+    @Getter
     private final Path root;
-    private final CompilationUnit unit;
-
+    @Getter
+    private final CompilationUnit compilationUnit;
+    @Getter
     private final String pkg;
 
     ClassParser(Path root, String sources) {
@@ -39,9 +44,10 @@ public class ClassParser {
         var parser = ASTParser.newParser(AST.JLS4);
         parser.setSource(sources.toCharArray());
         parser.setKind(ASTParser.K_COMPILATION_UNIT);
-        this.unit = (CompilationUnit) parser.createAST(null);
+        this.compilationUnit = (CompilationUnit) parser.createAST(null);
 
-        this.pkg = accept(PackageResolverVisitor::new).pkg();
+        var resolver = accept(PackageResolverVisitor::new);
+        this.pkg = resolver.pkg() + "." + resolver.name();
         if (!cache.containsKey(this.pkg)) {
             cache.put(this.pkg, this);
         }
@@ -55,23 +61,11 @@ public class ClassParser {
     }
 
     public <R extends ClassVisitor.Result> R accept(ClassVisitor<R> visitor) {
-        this.unit.accept(visitor);
+        this.compilationUnit.accept(visitor);
         return visitor.result();
     }
 
     public <R extends ClassVisitor.Result> R accept(Function<ClassParser, ClassVisitor<R>> visitorSupplier) {
         return accept(visitorSupplier.apply(this));
-    }
-
-    public Path root() {
-        return root;
-    }
-
-    public String pkg() {
-        return pkg;
-    }
-
-    public CompilationUnit compilationUnit() {
-        return unit;
     }
 }
