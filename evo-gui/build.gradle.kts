@@ -1,5 +1,6 @@
 plugins {
     `java-library`
+    id("com.gradleup.shadow") version "8.3.2"
 }
 
 group = "fr.umontpellier"
