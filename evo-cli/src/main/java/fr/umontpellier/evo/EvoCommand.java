@@ -5,10 +5,10 @@ import fr.umontpellier.evo.visitor.StatisticVisitor;
 import picocli.CommandLine;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static fr.umontpellier.evo.utils.Streams.unwrap;
 import static java.nio.file.Files.walkFileTree;
@@ -24,13 +24,22 @@ public class EvoCommand {
         // Atroce
         walkFileTree(root, visitor);
 
-        var parsers = visitor.paths().stream()
+        var stats = visitor.paths().stream()
                 .map(f -> unwrap(() -> ClassParser.from(root, f)))
+                .filter(Objects::nonNull)
+                .map(p -> p.accept(StatisticVisitor::new))
                 .toList();
 
-        System.out.println("Lecture de " + parsers.size() + " classes effectuée avec succès.");
-        System.out.println("Nombre de ligne par méthode moyen: " + parsers.stream()
-                .map(p -> p.accept(StatisticVisitor::new))
+        System.out.println("- Nombre de classes dans l'application (sans compter les sous-classes): " + stats.size());
+        System.out.println("- Nombre de lignes de code de l’application: " + stats.stream()
+                .map(StatisticVisitor.Result::clazz)
+                .mapToInt(StatisticVisitor.Result.Class::lineCount)
+                .sum());
+        System.out.println("- Nombre total de méthodes de l’application: " + stats.stream()
+                .map(StatisticVisitor.Result::methods)
+                .mapToInt(List::size)
+                .sum());
+        System.out.println("- Nombre de ligne par méthode moyen: " + stats.stream()
                 .flatMap(p -> p.methods().stream())
                 .mapToInt(StatisticVisitor.Result.Method::lineCount)
                 .average()
