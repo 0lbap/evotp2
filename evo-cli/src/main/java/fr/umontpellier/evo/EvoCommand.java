@@ -43,7 +43,7 @@ public class EvoCommand {
                 .map(f -> unwrap(() -> ClassParser.from(root, f)))
                 .filter(Objects::nonNull)
                 .map(p -> p.accept(StatisticVisitor::new))
-                .toList();
+                .collect(Collectors.toList());
 
         System.out.println(Colors.brightGreen + "->" + Colors.reset + " Nombre de classes dans l'application (sans compter les sous-classes) : " + Colors.brightBlue + stats.size() + Colors.reset);
         System.out.println(Colors.brightGreen + "->" + Colors.reset + " Nombre de lignes de code de l’application :                            " + Colors.brightBlue + stats.stream()
@@ -83,7 +83,7 @@ public class EvoCommand {
                 .flatMap(p -> p.accept(CallGraphVisitor::new).calls().entrySet().stream())
                 .collect(Collectors.toMap(
                         e -> node(e.getKey()),
-                        e -> e.getValue().stream().map(Factory::node).toList(),
+                        e -> e.getValue().stream().map(Factory::node).collect(Collectors.toList()),
                         (list1, list2) -> {
                             List<Node> mergedList = new ArrayList<>(list1);
                             mergedList.addAll(list2);

@@ -26,7 +26,7 @@ public class ReflectiveClassParserTests {
     public void assertParsesPackage() throws IOException {
         var parser = ClassParser.from(rootPath, parserClassPath);
         assertEquals(parser.root(), rootPath);
-        assertEquals(parser.pkg(), "fr.umontpellier.evo");
+        assertEquals(parser.pkg(), "fr.umontpellier.evo.ClassParser");
     }
 
     @Test
@@ -40,7 +40,7 @@ public class ReflectiveClassParserTests {
         assertTrue(parser.accept(StatisticVisitor::new)
                 .methods()
                 .stream()
-                .filter(m -> m.name().equalsIgnoreCase("pkg"))
+                .filter(m -> m.name().equalsIgnoreCase("resolve"))
                 .map(StatisticVisitor.Result.Method::lineCount)
                 .findAny()
                 .isPresent());
