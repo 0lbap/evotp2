@@ -7,7 +7,6 @@ import fr.umontpellier.evo.visitor.StatisticVisitor;
 import guru.nidi.graphviz.attribute.Color;
 import guru.nidi.graphviz.attribute.Font;
 import guru.nidi.graphviz.attribute.Rank;
-import guru.nidi.graphviz.attribute.Style;
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
 import guru.nidi.graphviz.model.Factory;
@@ -21,7 +20,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static fr.umontpellier.evo.utils.Streams.unwrap;
-import static guru.nidi.graphviz.attribute.Attributes.attr;
 import static guru.nidi.graphviz.attribute.Rank.RankDir.LEFT_TO_RIGHT;
 import static guru.nidi.graphviz.model.Factory.graph;
 import static guru.nidi.graphviz.model.Factory.node;
@@ -80,10 +78,10 @@ public class EvoCommand {
         var map = visitor.paths().stream()
                 .map(f -> unwrap(() -> ClassParser.from(root, f)))
                 .filter(Objects::nonNull)
-                .flatMap(p -> p.accept(CallGraphVisitor::new).calls().entrySet().stream())
+                .flatMap(p -> p.accept(CallGraphVisitor::new).calls().entrySet().stream().filter(e -> !e.getKey().isEmpty()))
                 .collect(Collectors.toMap(
                         e -> node(e.getKey()),
-                        e -> e.getValue().stream().map(Factory::node).collect(Collectors.toList()),
+                        e -> e.getValue().stream().filter(f -> !f.isEmpty()).map(Factory::node).collect(Collectors.toList()),
                         (list1, list2) -> {
                             List<Node> mergedList = new ArrayList<>(list1);
                             mergedList.addAll(list2);

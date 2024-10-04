@@ -15,7 +15,7 @@ import java.util.Map;
 public class CallGraphVisitor extends ClassVisitor<CallGraphVisitor.Result> {
 
     private final Result result = new Result();
-    private String method;
+    private String method = "";
 
     public CallGraphVisitor(ClassParser caller) {
         super(caller);
@@ -29,6 +29,9 @@ public class CallGraphVisitor extends ClassVisitor<CallGraphVisitor.Result> {
 
     @Override
     public boolean visit(MethodInvocation node) {
+        if (node.getName() == null || node.getName().getFullyQualifiedName().isEmpty())
+            return super.visit(node);
+
         if (result.calls.containsKey(method)) {
             result.calls.get(method).add(node.getName().getFullyQualifiedName());
         } else {
