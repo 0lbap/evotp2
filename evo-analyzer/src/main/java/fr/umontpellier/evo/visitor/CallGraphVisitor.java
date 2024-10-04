@@ -4,26 +4,32 @@ import fr.umontpellier.evo.ClassParser;
 import fr.umontpellier.evo.ClassVisitor;
 import lombok.Data;
 import lombok.Getter;
+import org.eclipse.jdt.core.dom.DoStatement;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.TypeDeclaration;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class CallGraphVisitor extends ClassVisitor<CallGraphVisitor.Result> {
 
     private final Result result = new Result();
-    private String method = "";
+    private final Stack<String> method = new Stack<>(),
+            clazz = new Stack<>();
 
     public CallGraphVisitor(ClassParser caller) {
         super(caller);
     }
 
     @Override
+    public boolean visit(TypeDeclaration node) {
+        this.clazz.push(node.getName().getFullyQualifiedName());
+        return super.visit(node);
+    }
+
+    @Override
     public boolean visit(MethodDeclaration node) {
-        this.method = node.getName().toString();
+        this.method.push(node.getName().getFullyQualifiedName());
         return super.visit(node);
     }
 
@@ -32,10 +38,17 @@ public class CallGraphVisitor extends ClassVisitor<CallGraphVisitor.Result> {
         if (node.getName() == null || node.getName().getFullyQualifiedName().isEmpty())
             return super.visit(node);
 
-        if (result.calls.containsKey(method)) {
-            result.calls.get(method).add(node.getName().getFullyQualifiedName());
+        String source;
+        try {
+            source = clazz.peek() + "." + method.peek();
+        } catch (Exception e) {
+            source = clazz.peek();
+        }
+
+        if (result.calls.containsKey(source)) {
+            result.calls.get(source).add(node.getName().getFullyQualifiedName());
         } else {
-            result.calls.put(method, new ArrayList<>(List.of(node.getName().getFullyQualifiedName())));
+            result.calls.put(source, new ArrayList<>(List.of(node.getName().getFullyQualifiedName())));
         }
         return super.visit(node);
     }
