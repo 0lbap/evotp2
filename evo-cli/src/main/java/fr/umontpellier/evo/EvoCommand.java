@@ -29,9 +29,10 @@ import static java.nio.file.Files.walkFileTree;
 @CommandLine.Command(name = "evo")
 public class EvoCommand {
 
-    @CommandLine.Command(name = "analyze")
+    @CommandLine.Command(name = "analyze", description = "Analyse l'ensemble des classes dans un répertoire donnée et renvoie les statistiques demandées.")
     public Integer analyze(
-            @CommandLine.Parameters(arity = "1", paramLabel = "root")  Path root
+            @CommandLine.Parameters(arity = "1", paramLabel = "root", description = "Racine des dossiers contenant les classes Java")  Path root,
+            @CommandLine.Option(names = {"method_size", "M"}, description = "Précise le nombre X de méthode") long methodSize
     ) throws IOException {
         var visitor = new FileTreeAgregationVisitor(Optional.of(".java"));
         // Atroce
@@ -52,16 +53,73 @@ public class EvoCommand {
                 .map(StatisticVisitor.Result::methods)
                 .mapToInt(List::size)
                 .sum() + Colors.reset);
+        System.out.println(Colors.brightGreen + "->" + Colors.reset + " Nombre total de package dans l'application :                           " + Colors.brightBlue + stats.stream()
+                .map(StatisticVisitor.Result::pkg)
+                .collect(Collectors.toSet())
+                .size() + Colors.reset);
+        System.out.println(Colors.brightGreen + "->" + Colors.reset + " Nombre moyen de méthodes par classe :                                  " + Colors.brightBlue + stats.stream()
+                .map(StatisticVisitor.Result::methods)
+                .mapToInt(List::size)
+                .average()
+                .orElse(0.0) + Colors.reset);
+        System.out.println(Colors.brightGreen + "->" + Colors.reset + " Nombre moyen d'attribut par classe :                                   " + Colors.brightBlue + stats.stream()
+                .map(StatisticVisitor.Result::fields)
+                .mapToInt(List::size)
+                .average()
+                .orElse(0.0)+ Colors.reset);
         System.out.println(Colors.brightGreen + "->" + Colors.reset + " Nombre de ligne par méthode moyen :                                    " + Colors.brightBlue + String.format("%1.2f", stats.stream()
                 .flatMap(p -> p.methods().stream())
                 .mapToInt(StatisticVisitor.Result.Method::lineCount)
                 .average()
                 .orElse(0.0)) + Colors.reset);
+        var classSortedByMethods = stats.stream()
+                .sorted(Comparator.comparingInt(m -> -m.methods().size()))
+                .map(StatisticVisitor.Result::clazz)
+                .map(StatisticVisitor.Result.Class::name)
+                .collect(Collectors.toList());
+        var classSortedByAttributes = stats.stream()
+                .sorted(Comparator.comparingInt(m -> -m.fields().size()))
+                .map(StatisticVisitor.Result::clazz)
+                .map(StatisticVisitor.Result.Class::name)
+                .collect(Collectors.toList());
+        var tenPercentMethods = classSortedByMethods.stream()
+                .limit((long) Math.ceil(classSortedByMethods.size() * 0.1))
+                .collect(Collectors.toSet());
+        var tenPercentAttributes = classSortedByAttributes.stream()
+                .limit((long) Math.ceil(classSortedByAttributes.size() * 0.1))
+                .collect(Collectors.toSet());
+        System.out.println(Colors.brightGreen + "->" + Colors.reset + " 10% des classes avec le plus de méthodes :                             " + Colors.brightBlue + String.join(", ", tenPercentMethods) + Colors.reset);
+        System.out.println(Colors.brightGreen + "->" + Colors.reset + " 10% des classes avec le plus d'attributs :                             " + Colors.brightBlue + String.join(", ", tenPercentAttributes) + Colors.reset);
+        var intersection = new HashSet<>(tenPercentAttributes);
+        intersection.retainAll(tenPercentMethods);
+        System.out.println(Colors.brightGreen + "->" + Colors.reset + " Intersection des deux catégories précédantes :                         " + Colors.brightBlue + (intersection.isEmpty() ? "∅" : String.join(", ", intersection)) + Colors.reset);
+
+        var classWithXmethods = stats.stream()
+                .filter(c -> c.methods().size() > methodSize)
+                .map(StatisticVisitor.Result::clazz)
+                .map(StatisticVisitor.Result.Class::name)
+                .collect(Collectors.toSet());
+        System.out.println(Colors.brightGreen + "->" + Colors.reset + " Classes avec plus de " + methodSize + " méthodes :                                      " + Colors.brightBlue + (classWithXmethods.isEmpty() ? "∅" : String.join(", ", classWithXmethods)) + Colors.reset);
+
+        var methodsSortedByLines = stats.stream()
+                .flatMap(r -> r.methods().stream())
+                .sorted(Comparator.comparingInt(m -> -m.lineCount()))
+                .collect(Collectors.toList());
+        var tenPercentMethodsLines = methodsSortedByLines.stream()
+                .limit((long) Math.ceil(methodsSortedByLines.size() * 0.1))
+                .map(StatisticVisitor.Result.Method::name)
+                .collect(Collectors.toSet());
+        System.out.println(Colors.brightGreen + "->" + Colors.reset + " 10% des méthodes avec le plus de lignes :                              " + Colors.brightBlue + String.join(", ", tenPercentMethodsLines) + Colors.reset);
+        System.out.println(Colors.brightGreen + "->" + Colors.reset + " Nombre de paramètre pour la méthode avec le plus de paramètres :       " + Colors.brightBlue + stats.stream()
+                .flatMap(r -> r.methods().stream())
+                .min(Comparator.comparingInt(m -> -m.parameters()))
+                .map(m -> m.name() + "(" + m.parameters() + ")")
+                .orElse("∅") + Colors.reset);
 
         return 0;
     }
 
-    @CommandLine.Command(name = "callgraph")
+    @CommandLine.Command(name = "callgraph", description = "Retourne le graphe d'appel de profondeur 1, au format .dot de graphviz")
     public Integer callGraph(
             @CommandLine.Parameters(arity = "1", paramLabel = "root") Path root
     ) throws IOException {
