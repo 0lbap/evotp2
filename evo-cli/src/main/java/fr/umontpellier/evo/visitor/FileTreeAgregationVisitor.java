@@ -3,13 +3,15 @@ package fr.umontpellier.evo.visitor;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Utilitaire pour visiter les fichiers dans un dossier
+ */
 public class FileTreeAgregationVisitor implements FileVisitor<Path> {
 
     private final List<Path> paths = new ArrayList<>();

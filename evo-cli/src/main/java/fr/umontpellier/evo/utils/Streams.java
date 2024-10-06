@@ -4,6 +4,9 @@ public class Streams {
 
     Streams() {}
 
+    /**
+     * Permet d'appeler une méthode qui renvoie une exception dans un stream
+     */
     public static <R, E extends Throwable> R unwrap(UnwrapFunction<R, E> f) {
         try {
             return f.apply();

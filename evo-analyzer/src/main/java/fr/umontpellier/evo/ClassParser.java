@@ -21,6 +21,12 @@ public class ClassParser {
 
     private static final Map<String, ClassParser> cache = new HashMap<>();
 
+    /**
+     * Initialise un parser ou le prend depuis le cache.
+     * @param projectRoot racine du projet
+     * @param sources sources
+     * @return un parser
+     */
     public static ClassParser from(Path projectRoot, String sources) {
         var parser = new ClassParser(projectRoot, sources);
         if (cache.containsKey(parser.pkg))
@@ -28,6 +34,14 @@ public class ClassParser {
         return parser;
     }
 
+    /**
+     * Similaire mais lis le fichier
+     *
+     * @param projectRoot racine du projet
+     * @param file chemin du fichier
+     * @return un parser
+     * @throws IOException erreur de lecture
+     */
     public static ClassParser from(Path projectRoot, Path file) throws IOException {
         return from(projectRoot, readString(file));
     }
@@ -39,6 +53,12 @@ public class ClassParser {
     @Getter
     private final String pkg;
 
+    /**
+     * Initialise le parser et lit l'AST
+     *
+     * @param root racine
+     * @param sources sources
+     */
     ClassParser(Path root, String sources) {
         this.root = root;
         var parser = ASTParser.newParser(AST.JLS4);
@@ -60,11 +80,23 @@ public class ClassParser {
         );
     }
 
+    /**
+     * Accepte un visiteur et retourne son résultat
+     * @param visitor le visiteur
+     * @return le resultat
+     * @param <R> le resultat
+     */
     public <R extends ClassVisitor.Result> R accept(ClassVisitor<R> visitor) {
         this.compilationUnit.accept(visitor);
         return visitor.result();
     }
 
+    /**
+     * Similaire mais il est possible de donner une fonction qui retourne un visiteur
+     * @param visitorSupplier la fonction
+     * @return le résultat
+     * @param <R> le résultat
+     */
     public <R extends ClassVisitor.Result> R accept(Function<ClassParser, ClassVisitor<R>> visitorSupplier) {
         return accept(visitorSupplier.apply(this));
     }

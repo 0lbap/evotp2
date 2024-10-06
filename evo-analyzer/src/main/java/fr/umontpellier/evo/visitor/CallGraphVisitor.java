@@ -57,6 +57,9 @@ public class CallGraphVisitor extends ClassVisitor<CallGraphVisitor.Result> {
         return result;
     }
 
+    /**
+     * Résultat contient un dictionnaire avec les sources puis les appels
+     */
     @Getter
     @Data
     public static class Result implements ClassVisitor.Result {

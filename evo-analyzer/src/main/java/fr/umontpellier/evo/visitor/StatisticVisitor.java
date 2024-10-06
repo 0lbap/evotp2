@@ -55,6 +55,9 @@ public class StatisticVisitor extends ClassVisitor<StatisticVisitor.Result> {
         return result;
     }
 
+    /**
+     * Les structures de données pour le résultat
+     */
     @Data
     public static class Result implements ClassVisitor.Result {
         private String pkg;
