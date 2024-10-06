@@ -1,12 +1,12 @@
-= evo-tp-1
+# evo-tp-1
 
-== Getting started
+## Getting started
 
 Avant de procéder à l'installation, il faut imprérativement s'assurer d'avoir:
 - Java (version >= 11)
 - `graphviz` pour la génération de graphe
 
-== Commandes à connaître
+## Commandes à connaître
 
 Pour lancer la compilation du projet:
 ```bash
