@@ -23,7 +23,7 @@ Pour effectuer le calcul du graphe d'appel (affichage ici avec Kitty sans sauveg
 ```bash
 # traduis le résultat en .dot
 java -jar evo-cli/build/libs/evo-cli-1.0-SNAPSHOT-all.jar callgraph path/to/project/root
-# traduis le résultat en .png puis l'écris dans un fichier
+# traduis le résultat en .png puis l'écris dans un fichier (SVG, PNG, ... sont possibles)
 java -jar evo-cli/build/libs/evo-cli-1.0-SNAPSHOT-all.jar callgraph path/to/project/root | dot -T png > mon_image.png
 # traduis le résultat en png puis l'affiche dans le terminal kitty
 java -jar evo-cli/build/libs/evo-cli-1.0-SNAPSHOT-all.jar callgraph path/to/project/root | dot -T png | kitty +kitten icat .
