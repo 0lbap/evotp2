@@ -4,7 +4,6 @@ import fr.umontpellier.evo.ClassParser;
 import fr.umontpellier.evo.ClassVisitor;
 import lombok.Data;
 import lombok.Getter;
-import org.eclipse.jdt.core.dom.DoStatement;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.TypeDeclaration;

@@ -3,7 +3,6 @@ package fr.umontpellier.evo.visitor;
 import fr.umontpellier.evo.ClassParser;
 import fr.umontpellier.evo.ClassVisitor;
 import lombok.Data;
-import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.PackageDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 
