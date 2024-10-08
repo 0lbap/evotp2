@@ -1,3 +1,3 @@
-rootProject.name = "evo-tp-1"
+rootProject.name = "evo-tp-2"
 include("evo-analyzer")
 include("evo-cli")

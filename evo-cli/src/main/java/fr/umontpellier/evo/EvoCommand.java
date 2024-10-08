@@ -2,11 +2,10 @@ package fr.umontpellier.evo;
 
 import fr.umontpellier.evo.utils.Colors;
 import fr.umontpellier.evo.visitor.CallGraphVisitor;
+import fr.umontpellier.evo.visitor.CouplageVisitor;
 import fr.umontpellier.evo.visitor.FileTreeAgregationVisitor;
 import fr.umontpellier.evo.visitor.StatisticVisitor;
-import guru.nidi.graphviz.attribute.Color;
-import guru.nidi.graphviz.attribute.Font;
-import guru.nidi.graphviz.attribute.Rank;
+import guru.nidi.graphviz.attribute.*;
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
 import guru.nidi.graphviz.model.Factory;
@@ -20,6 +19,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static fr.umontpellier.evo.utils.Streams.unwrap;
+import static guru.nidi.graphviz.attribute.Attributes.attr;
 import static guru.nidi.graphviz.attribute.Rank.RankDir.LEFT_TO_RIGHT;
 import static guru.nidi.graphviz.model.Factory.graph;
 import static guru.nidi.graphviz.model.Factory.node;
@@ -155,6 +155,59 @@ public class EvoCommand {
         }
 
         System.out.println(Graphviz.fromGraph(g).height(100).render(Format.DOT));
+        return 0;
+    }
+
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    @CommandLine.Command(name = "couplage", description = "Retourne le graphe de couplage, au format .dot de graphviz")
+    public Integer couplage(
+            @CommandLine.Parameters(arity = "1", paramLabel = "root") Path root
+    ) throws IOException {
+        var visitor = new FileTreeAgregationVisitor(Optional.of(".java"));
+        // Atroce
+        walkFileTree(root, visitor);
+
+        var couplages = visitor.paths().stream()
+                .map(f -> unwrap(() -> ClassParser.from(root, f)))
+                .filter(Objects::nonNull)
+                .map(parser -> parser.accept(CouplageVisitor::new))
+                .map(CouplageVisitor.Result::couplages)
+                .map(Map::entrySet)
+                .flatMap(Set::stream)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, Integer::sum));
+        var total = couplages.values()
+                .stream()
+                .mapToInt(i -> i)
+                .sum();
+        var nodes = couplages.keySet().stream()
+                .flatMap(Set::stream)
+                .distinct()
+                .collect(Collectors.toMap(e -> e, Factory::mutNode));
+
+        Graph g = graph("couplage")
+                .graphAttr().with(Color.TRANSPARENT.background())
+                .graphAttr().with(Color.WHITE.font())
+                .graphAttr().with(Rank.dir(LEFT_TO_RIGHT))
+                .nodeAttr().with(Font.name("arial"), Color.WHITE.font(), Color.WHITE)
+                .linkAttr().with(Color.WHITE.font(), Color.WHITE);
+        for (var entry: couplages.entrySet()) {
+            var couple = new ArrayList<>(entry.getKey());
+            var a = nodes.get(couple.get(0));
+            var b = nodes.get(couple.get(1));
+            var couplage = entry.getValue();
+            var m = couplages.entrySet().stream()
+                    .filter(e -> e.getKey().contains(couple.get(0)))
+                    .mapToInt(Map.Entry::getValue)
+                    .max().orElse(couplage);
+
+            a.addLink(to(b).with(attr("minlen", m - couplage + 1), Label.of(String.format("%.2f", couplage / (double)total))));
+        }
+        for (var node: nodes.values()) {
+            g = g.with(node);
+        }
+
+        System.out.println(Graphviz.fromGraph(g).render(Format.DOT));
+
         return 0;
     }
 

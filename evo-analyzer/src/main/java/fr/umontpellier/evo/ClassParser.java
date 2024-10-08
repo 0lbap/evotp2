@@ -62,8 +62,11 @@ public class ClassParser {
     ClassParser(Path root, String sources) {
         this.root = root;
         var parser = ASTParser.newParser(AST.JLS4);
-        parser.setSource(sources.toCharArray());
         parser.setKind(ASTParser.K_COMPILATION_UNIT);
+        parser.setResolveBindings(true);
+        parser.setBindingsRecovery(true);
+        parser.setUnitName("");
+        parser.setSource(sources.toCharArray());
         this.compilationUnit = (CompilationUnit) parser.createAST(null);
 
         var resolver = accept(PackageResolverVisitor::new);
