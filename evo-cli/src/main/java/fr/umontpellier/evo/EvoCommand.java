@@ -10,6 +10,7 @@ import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
 import guru.nidi.graphviz.model.Factory;
 import guru.nidi.graphviz.model.Graph;
+import guru.nidi.graphviz.model.MutableNode;
 import guru.nidi.graphviz.model.Node;
 import picocli.CommandLine;
 
@@ -20,9 +21,8 @@ import java.util.stream.Collectors;
 
 import static fr.umontpellier.evo.utils.Streams.unwrap;
 import static guru.nidi.graphviz.attribute.Attributes.attr;
-import static guru.nidi.graphviz.attribute.Rank.RankDir.LEFT_TO_RIGHT;
-import static guru.nidi.graphviz.model.Factory.graph;
-import static guru.nidi.graphviz.model.Factory.node;
+import static guru.nidi.graphviz.attribute.Rank.RankDir.*;
+import static guru.nidi.graphviz.model.Factory.*;
 import static guru.nidi.graphviz.model.Link.to;
 import static java.nio.file.Files.walkFileTree;
 
@@ -206,6 +206,77 @@ public class EvoCommand {
             g = g.with(node);
         }
 
+        System.out.println(Graphviz.fromGraph(g).render(Format.DOT));
+
+        return 0;
+    }
+
+    @CommandLine.Command(name = "clusterize", description = "Retourne les clusters des classes, au format .dot de graphviz")
+    public Integer clusterize(
+            @CommandLine.Parameters(arity = "1", paramLabel = "root") Path root
+    ) throws IOException {
+        var visitor = new FileTreeAgregationVisitor(Optional.of(".java"));
+
+        walkFileTree(root, visitor);
+
+        var couplages = visitor.paths().stream()
+                .map(f -> unwrap(() -> ClassParser.from(root, f)))
+                .filter(Objects::nonNull)
+                .map(parser -> parser.accept(CouplageVisitor::new))
+                .map(CouplageVisitor.Result::couplages)
+                .map(Map::entrySet)
+                .flatMap(Set::stream)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, Integer::sum));
+
+        var total = couplages.values()
+                .stream()
+                .mapToInt(i -> i)
+                .sum();
+
+        var dendro = ClassClusterizer.clusterize(couplages, total);
+
+        // Convert the dendrogram into a Graphviz graph
+        Graph g = graph("clusterization")
+                .graphAttr().with(Color.TRANSPARENT.background())
+                .graphAttr().with(Color.WHITE.font())
+                .graphAttr().with(Rank.dir(BOTTOM_TO_TOP))
+                .nodeAttr().with(Font.name("arial"), Color.WHITE.font(), Color.WHITE)
+                .linkAttr().with(Color.WHITE.font(), Color.WHITE);
+
+        Map<ClassClusterizer.Cluster, MutableNode> nodes = new HashMap<>();
+        int clusterId = 1;
+
+        // Create nodes for each individual class and cluster
+        for (ClassClusterizer.Dendrogram.Step step : dendro.getSteps()) {
+            ClassClusterizer.Cluster cluster1 = step.cluster1;
+            ClassClusterizer.Cluster cluster2 = step.cluster2;
+            ClassClusterizer.Cluster mergedCluster = step.mergedCluster;
+            int weight = step.weight;
+
+            // Create nodes for each cluster if not already present
+            nodes.putIfAbsent(cluster1, mutNode("C" + clusterId++).add(Label.of(cluster1.getClassNames().toString())));
+            nodes.putIfAbsent(cluster2, mutNode("C" + clusterId++).add(Label.of(cluster2.getClassNames().toString())));
+            nodes.putIfAbsent(mergedCluster, mutNode("C" + clusterId++).add(Label.of(mergedCluster.getClassNames().toString())));
+
+            // Add an edge between the two clusters being merged
+            g = g.with(
+                    nodes.get(cluster1).addLink(
+                            to(nodes.get(mergedCluster))
+                                    .with(Label.of(String.format("%.2f", weight / (double) total)), attr("minlen", 1))
+                    ),
+                    nodes.get(cluster2).addLink(
+                            to(nodes.get(mergedCluster))
+                                    .with(Label.of(String.format("%.2f", weight / (double) total)), attr("minlen", 1))
+                    )
+            );
+        }
+
+        // Add all nodes to the graph
+        for (var node : nodes.values()) {
+            g = g.with(node);
+        }
+
+        // Output the Graphviz representation
         System.out.println(Graphviz.fromGraph(g).render(Format.DOT));
 
         return 0;
