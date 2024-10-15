@@ -240,7 +240,7 @@ public class EvoCommand {
                 .graphAttr().with(Color.TRANSPARENT.background())
                 .graphAttr().with(Color.WHITE.font())
                 .graphAttr().with(Rank.dir(BOTTOM_TO_TOP))
-                .nodeAttr().with(Font.name("arial"), Color.WHITE.font(), Color.WHITE)
+                .nodeAttr().with(Font.name("arial"), Color.WHITE.font(), Color.WHITE, Shape.RECTANGLE)
                 .linkAttr().with(Color.WHITE.font(), Color.WHITE);
 
         Map<ClassClusterizer.Cluster, MutableNode> nodes = new HashMap<>();
