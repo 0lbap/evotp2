@@ -4,6 +4,7 @@ eclipse-core-runtime = "3.9.100-v20131218-1515"
 eclipse-burt-resources = "3.8.101.v20130717-0806"
 picocli = "4.7.6"
 lombok = "1.18.34"
+spoon = "11.1.0"
 
 [libraries]
 eclipse-tycho-core = { group = "org.eclipse.tycho", name = "org.eclipse.jdt.core", version.ref = "eclipse-tycho-core" }
@@ -12,3 +13,4 @@ eclipse-burt-resources = { group = "org.eclipse.birt.runtime", name = "org.eclip
 picocli-api = { group = "info.picocli", name = "picocli", version.ref = "picocli" }
 picocli-annotation-processor = { group = "info.picocli", name = "picocli-codegen", version.ref = "picocli" }
 lombok = { group = "org.projectlombok", name = "lombok", version.ref = "lombok" }
+spoon = { group = "fr.inria.gforge.spoon", name = "spoon-core", version.ref = "spoon" }
