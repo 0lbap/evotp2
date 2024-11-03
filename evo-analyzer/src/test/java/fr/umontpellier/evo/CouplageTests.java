@@ -25,4 +25,12 @@ public class CouplageTests {
         assertFalse(parser.accept(CouplageVisitor::new).couplages().isEmpty());
     }
 
+    @Test
+    public void testExample() throws IOException {
+        var root = Path.of(".", "src", "test", "resources", "examples", "abcd");
+        var parser = ClassParser.from(root, root.resolve("A.java"));
+        var couplages = parser.accept(CouplageVisitor::new).couplages();
+        System.out.println(couplages);
+    }
+
 }

@@ -211,8 +211,24 @@ public class EvoCommand {
         return 0;
     }
 
+    private MutableNode createNodeForCluster(ClassClusterizer.Cluster cluster, boolean isInModule, int clusterId) {
+        String label = cluster.getClassNames().toString();
+
+        // Changer la couleur et le label si le cluster fait partie d'un module
+        if (isInModule) {
+            return mutNode("C" + clusterId)
+                    .add(Label.of("Module: " + label))
+                    .add(Color.RED); // Couleur spécifique pour les modules
+        } else {
+            return mutNode("C" + clusterId)
+                    .add(Label.of(label)) // Label par défaut
+                    .add(Color.WHITE);    // Couleur par défaut
+        }
+    }
+
     @CommandLine.Command(name = "clusterize", description = "Retourne les clusters des classes, au format .dot de graphviz")
     public Integer clusterize(
+            @CommandLine.Option(names = {"--cp", "-cp"}) Integer CP,
             @CommandLine.Parameters(arity = "1", paramLabel = "root") Path root
     ) throws IOException {
         var visitor = new FileTreeAgregationVisitor(Optional.of(".java"));
@@ -234,6 +250,7 @@ public class EvoCommand {
                 .sum();
 
         var dendro = ClassClusterizer.clusterize(couplages, total);
+        var modules = CP != null ? dendro.getTopModules(CP) : new HashSet<>();
 
         // Convert the dendrogram into a Graphviz graph
         Graph g = graph("clusterization")
@@ -253,12 +270,12 @@ public class EvoCommand {
             ClassClusterizer.Cluster mergedCluster = step.mergedCluster;
             int weight = step.weight;
 
-            // Create nodes for each cluster if not already present
-            nodes.putIfAbsent(cluster1, mutNode("C" + clusterId++).add(Label.of(cluster1.getClassNames().toString())));
-            nodes.putIfAbsent(cluster2, mutNode("C" + clusterId++).add(Label.of(cluster2.getClassNames().toString())));
-            nodes.putIfAbsent(mergedCluster, mutNode("C" + clusterId++).add(Label.of(mergedCluster.getClassNames().toString())));
+            // Créer les noeuds pour cluster1, cluster2 et mergedCluster
+            nodes.putIfAbsent(cluster1, createNodeForCluster(cluster1, modules.contains(cluster1), clusterId++));
+            nodes.putIfAbsent(cluster2, createNodeForCluster(cluster2, modules.contains(cluster2), clusterId++));
+            nodes.putIfAbsent(mergedCluster, createNodeForCluster(mergedCluster, modules.contains(mergedCluster), clusterId++));
 
-            // Add an edge between the two clusters being merged
+            // Ajouter une arête entre les clusters fusionnés
             g = g.with(
                     nodes.get(cluster1).addLink(
                             to(nodes.get(mergedCluster))

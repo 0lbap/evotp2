@@ -45,6 +45,18 @@ public class CouplageVisitor extends ClassVisitor<CouplageVisitor.Result> {
     }
 
     @Override
+    public boolean visit(VariableDeclarationStatement node) {
+        String type = removeGenerics(node.getType().toString());
+        for (var fragment: node.fragments()) {
+            if (fragment instanceof VariableDeclaration) {
+                String name = ((VariableDeclaration) fragment).getName().getFullyQualifiedName();
+                variableTypes.peek().put(name, type);
+            }
+        }
+        return super.visit(node);
+    }
+
+    @Override
     public boolean visit(MethodInvocation node) {
         var type = "Unknown";
         for (var map: variableTypes) {

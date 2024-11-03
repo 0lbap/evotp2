@@ -80,6 +80,24 @@ public class ClassClusterizer {
         public Set<String> getClassNames() {
             return classNames;
         }
+
+        // Calculate the average coupling of this cluster
+        public double getAverageCoupling(Map<Set<String>, Integer> couplings) {
+            int sumCoupling = 0;
+            int count = 0;
+            for (String class1 : classNames) {
+                for (String class2 : classNames) {
+                    if (!class1.equals(class2)) {
+                        Set<String> pair = Set.of(class1, class2);
+                        if (couplings.containsKey(pair)) {
+                            sumCoupling += couplings.get(pair);
+                            count++;
+                        }
+                    }
+                }
+            }
+            return count > 0 ? (double) sumCoupling / count : 0;
+        }
     }
 
     // Represents the dendrogram for hierarchical clustering
@@ -96,6 +114,40 @@ public class ClassClusterizer {
 
         public List<Step> getSteps() {
             return this.steps;
+        }
+
+        /**
+         * Get the top clusters that represent the modules of the application.
+         * Selects the top maxModules number of clusters based on the dendrogram hierarchy.
+         * Ensures that the clusters are non-overlapping and belong to different branches.
+         */
+        public Set<Cluster> getTopModules(int maxModules) {
+            // Start with all clusters as separate modules
+            List<Cluster> finalModules = new ArrayList<>();
+            Set<Cluster> currentClusters = new HashSet<>();
+            for (Step step : steps) {
+                currentClusters.add(step.mergedCluster);
+            }
+
+            // Ensure we do not exceed the number of modules
+            while (finalModules.size() < maxModules && !currentClusters.isEmpty()) {
+                Cluster largestCluster = selectLargestCluster(currentClusters);
+                finalModules.add(largestCluster);
+                // Remove all subclusters from consideration
+                currentClusters.removeAll(largestCluster.mergedClusters);
+                currentClusters.remove(largestCluster);
+            }
+
+            return new HashSet<>(finalModules);
+        }
+
+        /**
+         * Selects the largest cluster from the set of current clusters.
+         * @param clusters The set of clusters to choose from.
+         * @return The largest cluster.
+         */
+        private Cluster selectLargestCluster(Set<Cluster> clusters) {
+            return clusters.stream().max(Comparator.comparingInt(c -> c.getClassNames().size())).orElseThrow();
         }
 
         // Represents a single step in the dendrogram
