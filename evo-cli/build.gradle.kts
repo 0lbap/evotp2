@@ -12,6 +12,7 @@ repositories {
 
 dependencies {
     implementation(project(":evo-analyzer"))
+    implementation(project(":evo-spoon"))
 
     implementation(libs.picocli.api)
     annotationProcessor(libs.picocli.annotation.processor)

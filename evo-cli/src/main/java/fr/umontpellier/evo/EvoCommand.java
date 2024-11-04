@@ -1,10 +1,7 @@
 package fr.umontpellier.evo;
 
 import fr.umontpellier.evo.utils.Colors;
-import fr.umontpellier.evo.visitor.CallGraphVisitor;
-import fr.umontpellier.evo.visitor.CouplageVisitor;
-import fr.umontpellier.evo.visitor.FileTreeAgregationVisitor;
-import fr.umontpellier.evo.visitor.StatisticVisitor;
+import fr.umontpellier.evo.visitor.*;
 import guru.nidi.graphviz.attribute.*;
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
@@ -161,6 +158,7 @@ public class EvoCommand {
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     @CommandLine.Command(name = "couplage", description = "Retourne le graphe de couplage, au format .dot de graphviz")
     public Integer couplage(
+            @CommandLine.Option(names = {"--spoon", "-s"}) boolean spoon,
             @CommandLine.Parameters(arity = "1", paramLabel = "root") Path root
     ) throws IOException {
         var visitor = new FileTreeAgregationVisitor(Optional.of(".java"));
@@ -168,10 +166,14 @@ public class EvoCommand {
         walkFileTree(root, visitor);
 
         var couplages = visitor.paths().stream()
-                .map(f -> unwrap(() -> ClassParser.from(root, f)))
+                .map(f -> unwrap(() -> spoon ? SpoonClassParser.from(root, f) : ClassParser.from(root, f)))
                 .filter(Objects::nonNull)
-                .map(parser -> parser.accept(CouplageVisitor::new))
-                .map(CouplageVisitor.Result::couplages)
+                .map(parser -> {
+                    if (spoon)
+                        return ((SpoonClassParser) parser).accept(SpoonCouplageVisitor::new).couplages();
+                    else
+                        return ((ClassParser) parser).accept(CouplageVisitor::new).couplages();
+                })
                 .map(Map::entrySet)
                 .flatMap(Set::stream)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, Integer::sum));
@@ -228,6 +230,7 @@ public class EvoCommand {
 
     @CommandLine.Command(name = "clusterize", description = "Retourne les clusters des classes, au format .dot de graphviz")
     public Integer clusterize(
+            @CommandLine.Option(names = {"--spoon", "-s"}) boolean spoon,
             @CommandLine.Option(names = {"--cp", "-cp"}) Integer CP,
             @CommandLine.Parameters(arity = "1", paramLabel = "root") Path root
     ) throws IOException {
@@ -236,10 +239,14 @@ public class EvoCommand {
         walkFileTree(root, visitor);
 
         var couplages = visitor.paths().stream()
-                .map(f -> unwrap(() -> ClassParser.from(root, f)))
+                .map(f -> unwrap(() -> spoon ? SpoonClassParser.from(root, f) : ClassParser.from(root, f)))
                 .filter(Objects::nonNull)
-                .map(parser -> parser.accept(CouplageVisitor::new))
-                .map(CouplageVisitor.Result::couplages)
+                .map(parser -> {
+                    if (spoon)
+                        return ((SpoonClassParser) parser).accept(SpoonCouplageVisitor::new).couplages();
+                    else
+                        return ((ClassParser) parser).accept(CouplageVisitor::new).couplages();
+                })
                 .map(Map::entrySet)
                 .flatMap(Set::stream)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, Integer::sum));
@@ -298,5 +305,7 @@ public class EvoCommand {
 
         return 0;
     }
+
+
 
 }
