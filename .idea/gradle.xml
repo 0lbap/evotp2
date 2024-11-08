@@ -9,8 +9,11 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
-            <option value="$PROJECT_DIR$/evo-analyzer" />
-            <option value="$PROJECT_DIR$/evo-cli" />
+            <option value="$PROJECT_DIR$/evo-common" />
+            <option value="$PROJECT_DIR$/evo-eclipse" />
+            <option value="$PROJECT_DIR$/evo-eclipse-cli" />
+            <option value="$PROJECT_DIR$/evo-spoon" />
+            <option value="$PROJECT_DIR$/evo-spoon-cli" />
           </set>
         </option>
       </GradleProjectSettings>
