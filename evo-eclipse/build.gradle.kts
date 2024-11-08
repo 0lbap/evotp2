@@ -2,17 +2,16 @@ plugins {
     `java-library`
 }
 
-group = "fr.umontpellier"
-version = "1.0-SNAPSHOT"
-
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    api(project(":evo-common"))
+    api(libs.eclipse.tycho.core)
+    api(libs.eclipse.core.runtime)
+    api(libs.eclipse.burt.resources)
 
-    api(libs.spoon)
+    api(project(":evo-common"))
 
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)

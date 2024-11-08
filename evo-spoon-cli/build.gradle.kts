@@ -1,5 +1,6 @@
 plugins {
-    `java-library`
+    application
+    id("com.gradleup.shadow") version "8.3.2"
 }
 
 group = "fr.umontpellier"
@@ -10,20 +11,27 @@ repositories {
 }
 
 dependencies {
-    api(project(":evo-common"))
+    implementation(project(":evo-spoon"))
 
-    api(libs.spoon)
+    implementation(libs.picocli.api)
+    annotationProcessor(libs.picocli.annotation.processor)
 
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
-    testAnnotationProcessor(libs.lombok)
 
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+    implementation("guru.nidi:graphviz-java:0.18.1")
+    implementation("org.apache.logging.log4j:log4j-core:2.24.0")
+    implementation("org.slf4j:slf4j-simple:2.0.16")
 }
 
 tasks.test {
     useJUnitPlatform()
+}
+
+application {
+    mainClass = "fr.umontpellier.evo.Start"
 }
 
 java {
