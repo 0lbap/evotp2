@@ -27,6 +27,8 @@ import static java.nio.file.Files.walkFileTree;
 @CommandLine.Command(name = "evo")
 public class EvoCommand {
 
+    private double nodeColorHue = 0.0f;
+
     @CommandLine.Command(name = "analyze", description = "Analyse l'ensemble des classes dans un répertoire donnée et renvoie les statistiques demandées.")
     public Integer analyze(
             @CommandLine.Parameters(arity = "1", paramLabel = "root", description = "Racine des dossiers contenant les classes Java")  Path root,
@@ -200,9 +202,14 @@ public class EvoCommand {
 
         // Changer la couleur et le label si le cluster fait partie d'un module
         if (isInModule) {
+            Color nodeColor = Color.hsv(nodeColorHue, 1.0f, 1.0f);
+            nodeColorHue += 0.1f;
+            if (nodeColorHue > 1.0f) {
+                nodeColorHue -= 1.0f;
+            }
             return mutNode("C" + clusterId)
                     .add(Label.of("Module: " + label))
-                    .add(Color.RED); // Couleur spécifique pour les modules
+                    .add(nodeColor); // Couleur spécifique pour les modules
         } else {
             return mutNode("C" + clusterId)
                     .add(Label.of(label)) // Label par défaut
@@ -229,10 +236,10 @@ public class EvoCommand {
                 .sum();
 
         var dendro = ClassClusterizer.clusterize(couplages, total);
-        var modules = CP != null ? dendro.getTopModules(CP) : new HashSet<>();
+        var modules = CP != null ? dendro.identifyModules(CP) : new HashSet<>();
 
         // Convert the dendrogram into a Graphviz graph
-        Graph g = graph("clusterization")
+        Graph g = graph("clusterization" + (CP != null ? "_cp" + CP : ""))
                 .graphAttr().with(Color.TRANSPARENT.background())
                 .graphAttr().with(Color.WHITE.font())
                 .graphAttr().with(Rank.dir(BOTTOM_TO_TOP))

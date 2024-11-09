@@ -1,6 +1,8 @@
 package fr.umontpellier.evo;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ClassClusterizer {
 
@@ -114,6 +116,57 @@ public class ClassClusterizer {
 
         public List<Step> getSteps() {
             return this.steps;
+        }
+
+        /**
+         * Identify the modules in a dendrogram.
+         * @param cp The minimal coupling of the modules.
+         * @return A set of clusters, one for each module found.
+         */
+        public List<Cluster> identifyModules(int cp) {
+            // Count the number of classes (cluster leaves)
+            Set<Cluster> clusters = steps.stream()
+                    .flatMap(s -> Stream.of(s.cluster1, s.cluster2))
+                    .collect(Collectors.toSet());
+            long totalNumberOfClasses = clusters.stream()
+                    .filter(s -> s.classNames.size() == 1)
+                    .count();
+
+//            System.out.println("Steps:");
+//            for (Step s : steps) {
+//                System.out.println("|_ Step: weight=" + s.weight + ", cluster1=" + s.cluster1.classNames + ", cluster2=" + s.cluster2.classNames);
+//            }
+
+            // Initialization: one module containing every class (cluster)
+            List<Cluster> modules = new ArrayList<>();
+            int stepIndex = steps.size() - 1;
+            Step step = steps.get(stepIndex);
+            modules.add(step.mergedCluster);
+            int numberOfModules = 1;
+
+//            System.out.println("stepIndex=" + stepIndex + ", numberOfModules=" + numberOfModules + ", totalNumberOfClasses=" + totalNumberOfClasses + ", weight=" + step.weight + ", cp=" + cp);
+            while (numberOfModules <= totalNumberOfClasses / 2) {
+                if (stepIndex < 0) break;
+                step = steps.get(stepIndex);
+                if (step.weight > cp) break;
+                modules.remove(step.mergedCluster);
+                modules.add(step.cluster1);
+                modules.add(step.cluster2);
+                numberOfModules++;
+                stepIndex--;
+//                System.out.println("stepIndex=" + stepIndex + ", numberOfModules=" + numberOfModules + ", totalNumberOfClasses=" + totalNumberOfClasses + ", weight=" + step.weight + ", cp=" + cp);
+            }
+
+//            System.out.println("Total number of cluster leaves: " + totalNumberOfClasses);
+//            System.out.println("Latest step: weight=" + steps.getLast().weight + ", cluster1=" + steps.getLast().cluster1.classNames + ", cluster2=" + steps.getLast().cluster2.classNames);
+//            System.out.println("n-1 step: weight=" + steps.get(steps.size() - 2).weight + ", cluster1=" + steps.get(steps.size() - 2).cluster1.classNames + ", cluster2=" + steps.get(steps.size() - 2).cluster2.classNames);
+
+//            System.out.println("Modules");
+//            for (Cluster module : modules) {
+//                System.out.println("|_ Module: " + module.classNames);
+//            }
+
+            return modules;
         }
 
         /**
